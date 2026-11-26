@@ -15,25 +15,25 @@ workflows:
           brew install xcodegen || true
           xcodegen generate
           ls -la
+          echo "---- scheme 列表 ----"
+          xcodebuild -project "$XCODE_PROJECT" -list || true
       - name: 编译（不签名）
         script: |
           set -o pipefail
           mkdir -p build
-          xcodebuild -project "$XCODE_PROJECT" -scheme "$XCODE_SCHEME" \
-            -sdk iphoneos -configuration Release \
-            -destination 'generic/platform=iOS' \
+          xcodebuild -quiet \
+            -project "$XCODE_PROJECT" -scheme "$XCODE_SCHEME" \
+            -configuration Release -sdk iphoneos \
             -archivePath build/LiuRen.xcarchive \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
-            archive > build/xc.log 2>&1 || true
-          echo "==== 最后 80 行 ===="
-          tail -80 build/xc.log
-          echo "==== 错误行汇总 ===="
-          grep -n -E "error:|does not exist|ld: |Multiple commands produce" build/xc.log | head -60 || echo "(未匹配到 error: 关键字)"
-          if grep -q "BUILD FAILED\|ARCHIVE FAILED" build/xc.log; then
-            echo "编译失败"
-            exit 1
+            archive 2>&1 | tee build/xc.log | tail -40
+          st=${PIPESTATUS[0]}
+          echo "xcodebuild exit=$st"
+          if [ "$st" -ne 0 ]; then
+            echo "==== 错误行 ===="
+            grep -n -E "error:|fatal error|ld: |BUILD FAILED|ARCHIVE FAILED" build/xc.log | head -20
           fi
-          echo "编译成功"
+          exit $st
       - name: 打包 IPA
         script: |
           set -e
