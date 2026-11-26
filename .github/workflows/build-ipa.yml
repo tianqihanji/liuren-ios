@@ -1,0 +1,59 @@
+name: Build IPA
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build (unsigned)
+        run: |
+          xcodebuild -project LiuRen.xcodeproj \
+            -scheme LiuRen \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/LiuRen.xcarchive \
+            archive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM=""
+
+      - name: Package IPA
+        run: |
+          mkdir -p build/Payload
+          cp -R build/LiuRen.xcarchive/Products/Applications/LiuRen.app build/Payload/
+          cd build && zip -qry LiuRen-unsigned.ipa Payload
+          ls -lh LiuRen-unsigned.ipa
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LiuRen-unsigned-ipa
+          path: build/LiuRen-unsigned.ipa
+
+      - name: Publish to Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest build/LiuRen-unsigned.ipa \
+            --target "${GITHUB_SHA}" \
+            --title "大六壬神课 iOS 最新构建" \
+            --notes "签名前的 IPA（unsigned）。用 Sideloadly 以你自己的 Apple ID 签名后即可安装到 iPhone。构建号：${GITHUB_RUN_NUMBER}"
