@@ -1,6 +1,6 @@
 workflows:
   ios-unsigned:
-    name: 大六壬神课 iOS 未签名 IPA
+    name: 大六壬神课 iOS ad-hoc 签名 IPA
     instance_type: mac_mini_m2
     max_build_duration: 60
     environment:
@@ -14,10 +14,8 @@ workflows:
           set -e
           brew install xcodegen || true
           xcodegen generate
-          ls -la
-          echo "---- scheme 列表 ----"
           xcodebuild -project "$XCODE_PROJECT" -list || true
-      - name: 编译（不签名）
+      - name: 编译（先不签名）
         script: |
           set -o pipefail
           mkdir -p build
@@ -34,14 +32,30 @@ workflows:
             grep -n -E "error:|fatal error|ld: |BUILD FAILED|ARCHIVE FAILED" build/xc.log | head -20
           fi
           exit $st
-      - name: 打包 IPA
+      - name: ad-hoc 签名并校验
         script: |
           set -e
           APP=$(find build/LiuRen.xcarchive/Products/Applications -maxdepth 1 -name "*.app" | head -1)
           echo "APP=$APP"
+          rm -rf "$APP/_CodeSignature"
+          codesign --force --sign - --timestamp=none --identifier com.hanji.liuren "$APP"
+          echo "==== codesign -dv ===="
+          codesign -dvv "$APP" 2>&1 | head -20
+          echo "==== verify ===="
+          codesign --verify --strict --verbose=2 "$APP" && echo "VERIFY_OK"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "$APP/Info.plist"
+          ls -l "$APP/_CodeSignature"
+      - name: 打包 IPA
+        script: |
+          set -e
+          APP=$(find build/LiuRen.xcarchive/Products/Applications -maxdepth 1 -name "*.app" | head -1)
           rm -rf build/Payload && mkdir -p build/Payload
           cp -R "$APP" build/Payload/
-          cd build && zip -qry LiuRen-unsigned.ipa Payload && ls -l LiuRen-unsigned.ipa
+          cd build
+          zip -qry LiuRen-adhoc.ipa Payload
+          ls -l LiuRen-adhoc.ipa
+          unzip -l LiuRen-adhoc.ipa | head -20
     artifacts:
       - build/*.ipa
       - build/xc.log
