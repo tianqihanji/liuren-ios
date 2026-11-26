@@ -2,7 +2,7 @@ workflows:
   ios-unsigned:
     name: 大六壬神课 iOS 未签名 IPA
     instance_type: mac_mini_m2
-    max_build_duration: 40
+    max_build_duration: 60
     environment:
       xcode: latest
       vars:
@@ -11,24 +11,37 @@ workflows:
     scripts:
       - name: 生成 Xcode 工程
         script: |
+          set -e
           brew install xcodegen || true
           xcodegen generate
+          ls -la
       - name: 编译（不签名）
         script: |
-          xcodebuild -project "$XCODE_PROJECT" \
-            -scheme "$XCODE_SCHEME" \
-            -configuration Release \
-            -sdk iphoneos \
+          set -o pipefail
+          mkdir -p build
+          xcodebuild -project "$XCODE_PROJECT" -scheme "$XCODE_SCHEME" \
+            -sdk iphoneos -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath build/LiuRen.xcarchive \
-            archive \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" DEVELOPMENT_TEAM=""
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            archive > build/xc.log 2>&1 || true
+          echo "==== 最后 80 行 ===="
+          tail -80 build/xc.log
+          echo "==== 错误行汇总 ===="
+          grep -n -E "error:|does not exist|ld: |Multiple commands produce" build/xc.log | head -60 || echo "(未匹配到 error: 关键字)"
+          if grep -q "BUILD FAILED\|ARCHIVE FAILED" build/xc.log; then
+            echo "编译失败"
+            exit 1
+          fi
+          echo "编译成功"
       - name: 打包 IPA
         script: |
-          mkdir -p build/Payload
-          cp -R build/LiuRen.xcarchive/Products/Applications/LiuRen.app build/Payload/
-          cd build && zip -qry LiuRen-unsigned.ipa Payload
-          ls -lh LiuRen-unsigned.ipa
+          set -e
+          APP=$(find build/LiuRen.xcarchive/Products/Applications -maxdepth 1 -name "*.app" | head -1)
+          echo "APP=$APP"
+          rm -rf build/Payload && mkdir -p build/Payload
+          cp -R "$APP" build/Payload/
+          cd build && zip -qry LiuRen-unsigned.ipa Payload && ls -l LiuRen-unsigned.ipa
     artifacts:
-      - build/LiuRen-unsigned.ipa
+      - build/*.ipa
+      - build/xc.log
