@@ -30,6 +30,11 @@
 
 这是**未签名**的 IPA（GitHub 机器没有你的苹果证书，签不了名）。iPhone 不认未签名包，必须用下一步签名，这是苹果的规矩，绕不过去。
 
+> ⚠️ **首次构建若在 Actions 里显示 `cancelled`（没有执行任何步骤）**：不是代码问题，是本账号的 macOS 执行器没开通。
+> 两种解法（任选其一）：
+> 1. **GitHub 侧**：Settings → Billing → 添加支付方式（公共仓库的 macOS 分钟不扣费，只作身份核验），回到 Actions 点 `Re-run all jobs`；
+> 2. **Codemagic 侧（免信用卡，每月 500 分钟）**：用 GitHub 账号登录 [codemagic.io](https://codemagic.io) → Add application → 选本仓库 → 构建配置选 `codemagic.yaml` → Start new build，产物 `LiuRen-unsigned.ipa` 直接下载。本仓库已内置 `codemagic.yaml`，可直接用。
+
 ### 方式 2：Windows 上用 Sideloadly 签名安装（推荐，无需 Mac）
 
 1. 下载安装 [Sideloadly](https://sideloadly.io/)（Windows 版）；
