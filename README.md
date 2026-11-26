@@ -22,11 +22,14 @@
 
 ## 二、拿 IPA 的三种方式
 
-### 方式 1（本仓库已配好）：直接下 Release 里的 IPA
+### 方式 1（已出包）：直接下 Release 里的 IPA
 
-每次推送代码，GitHub 的 macOS 机器会自动编译并重新发布：
+👉 **已发布：`v1.0` → [下载 LiuRen-unsigned.ipa](https://github.com/tianqihanji/liuren-ios/releases/download/v1.0/LiuRen-unsigned.ipa)**（2.6 MB）
 
-👉 **Releases → `latest` → 下载 `LiuRen-unsigned.ipa`**
+该包由 **Codemagic 云端 macOS 构建机（mac_mini_m2，免信用卡，每月 500 分钟免费额度）** 编译产出，SHA256：
+`55FAA3D22A2A91D5598D957AFC6AEAF7FE26F330F3E09542F3625418A7969DF8`
+
+复现路径：`codemagic.yaml` → 生成 Xcode 工程（xcodegen）→ `xcodebuild archive`（不签名）→ 打 Payload 成 zip。后续每次改代码重新点一次 Start new build 即可。
 
 这是**未签名**的 IPA（GitHub 机器没有你的苹果证书，签不了名）。iPhone 不认未签名包，必须用下一步签名，这是苹果的规矩，绕不过去。
 
