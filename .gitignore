@@ -5,3 +5,5 @@ DerivedData/
 *.xcworkspace
 .DS_Store
 ipa_check/
+ipa_check/
+ipa_check2/

@@ -24,12 +24,12 @@
 
 ### 方式 1（已出包）：直接下 Release 里的 IPA
 
-👉 **已发布：`v1.0` → [下载 LiuRen-unsigned.ipa](https://github.com/tianqihanji/liuren-ios/releases/download/v1.0/LiuRen-unsigned.ipa)**（2.6 MB）
+👉 **当前可用版本：`v1.1-adhoc` → [下载 LiuRen-adhoc.ipa](https://github.com/tianqihanji/liuren-ios/releases/download/v1.1-adhoc/LiuRen-adhoc.ipa)**（2.66 MB）
 
-该包由 **Codemagic 云端 macOS 构建机（mac_mini_m2，免信用卡，每月 500 分钟免费额度）** 编译产出，SHA256：
-`55FAA3D22A2A91D5598D957AFC6AEAF7FE26F330F3E09542F3625418A7969DF8`
+SHA256：`8FD106FC1882A7534CEDC2B76D029873D78CEAF3B297440FEB112024B1D1CCA5`
 
-复现路径：`codemagic.yaml` → 生成 Xcode 工程（xcodegen）→ `xcodebuild archive`（不签名）→ 打 Payload 成 zip。后续每次改代码重新点一次 Start new build 即可。
+> ⚠️ `v1.0` 的 `LiuRen-unsigned.ipa` 是零签名包（二进制无 `LC_CODE_SIGNATURE`、包内无 `_CodeSignature`），iPhone 安装会报「无法验证 App 的完整性」，请勿使用。
+> v1.1 在云端补了 `codesign --force --sign -`（ad-hoc 签名）并用 `codesign --verify --strict` 校验，包内签名自洽，再交给 Sideloadly 换证书即可安装。
 
 这是**未签名**的 IPA（GitHub 机器没有你的苹果证书，签不了名）。iPhone 不认未签名包，必须用下一步签名，这是苹果的规矩，绕不过去。
 
